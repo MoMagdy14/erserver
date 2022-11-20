@@ -27,11 +27,15 @@ public class AlertScanner {
             if (!criticalPatientNotificationsSent.contains(patient.getTransportId())) {
                alertForNewCriticalPatient(patient);
             }
+         } else if (Priority.YELLOW.equals(patient.getPriority()) && "heart arrhythmia".equalsIgnoreCase(patient.getCondition())) {
+            if (!criticalPatientNotificationsSent.contains(patient.getTransportId())) {
+               alertForNewCriticalPatient(patient);
+            }
          }
       }
    }
 
-   private void alertForNewCriticalPatient(Patient patient) {
+   protected void alertForNewCriticalPatient(Patient patient) {
       try {
          PagerTransport transport = PagerSystem.getTransport();
          transport.initialize();
