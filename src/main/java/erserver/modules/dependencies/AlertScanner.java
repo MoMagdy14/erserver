@@ -11,13 +11,11 @@ public class AlertScanner {
 
    private static final String ADMIN_ON_CALL_DEVICE = "111-111-1111";
 
-   private StaffAssignmentManager staffAssignmentManager;
-   private InboundPatientController inboundPatientController;
+   private InboundPatientProvider inboundPatientController;
    private ArrayList<Integer> criticalPatientNotificationsSent;
 
-   public AlertScanner(StaffAssignmentManager staffAssignmentManager, InboundPatientController inboundPatientController) {
-      this.staffAssignmentManager = staffAssignmentManager;
-      this.inboundPatientController = inboundPatientController;
+   public AlertScanner(InboundPatientProvider inboundPatientProvider) {
+      this.inboundPatientController = inboundPatientProvider;
       criticalPatientNotificationsSent = new ArrayList<>();
    }
 

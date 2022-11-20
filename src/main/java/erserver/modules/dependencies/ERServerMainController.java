@@ -13,7 +13,7 @@ public class ERServerMainController {
       staffAssignmentManager = new StaffAssignmentManager();
       EmergencyResponseService emergencyTransportService = new EmergencyResponseService("http://localhost", 4567, 1000);
       inboundPatientController = new InboundPatientController(emergencyTransportService);
-      alertScanner = new AlertScanner(staffAssignmentManager, inboundPatientController);
+      alertScanner = new AlertScanner(inboundPatientController);
       TimerTask alertTask = new TimerTask() {
          @Override
          public void run() {
