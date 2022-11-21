@@ -18,9 +18,9 @@ public class DivergenceController {
    private int yellowCount;
    private int greenCount;
    private int allowedCount;
-   private int redOver;
-   private int yellowOver;
-   private int greenOver;
+   private int redBedMergin;
+   private int yellowBedMergin;
+   private int greenBedMergin;
 
    public DivergenceController() {
       this.redDivergence = false;
@@ -30,60 +30,67 @@ public class DivergenceController {
       this.yellowCount = 0;
       this.greenCount = 0;
       this.allowedCount = 3;
-      this.redOver = 0;
-      this.yellowOver = 1;
-      this.greenOver = 4;
+      this.redBedMergin = 0;
+      this.yellowBedMergin = 1;
+      this.greenBedMergin = 4;
    }
 
    public void check() {
       StaffAssignmentManager manager = new ERServerMainController().getStaffAssignmentManager();
       InboundPatientController controller = new ERServerMainController().getInboundPatientController();
-      int[] red = {1, 2};
-      int[] yellow = {1, 1};
-      int[] green = {0, 1};
+      int[] redStaffRequired = {1, 2};
+      int[] yellowStaffRequired = {1, 1};
+      int[] greenStaffRequired = {0, 1};
       boolean redIncremented = false;
       boolean yellowIncremented = false;
       boolean greenIncremented = false;
       List<Patient> patients = controller.currentInboundPatients();
       List<Staff> staff = manager.getAvailableStaff();
       List<Bed> beds = manager.getAvailableBeds();
-      int bedcrits = 0;
-      int redin = 0;
-      int yellowin = 0;
-      int greenin = 0;
-      int[] staffcur = {0, 0};
-      int[] need = {0, 0};
+      int criticalBedsAvailable = 0;
+      int redInboundPatientsCount = 0;
+      int yellowInboundPatientsCount = 0;
+      int greenInboundPatientsCount = 0;
+      int[] availableStaff = {0, 0};
+      int[] neededStaff = {0, 0};
 
+      // Calculate number of critical care beds
       for (Bed bed : beds) {
          if (bed.isCriticalCare()) {
-            bedcrits ++;
+            criticalBedsAvailable ++;
          }
       }
+
+      // Count number of inbound patients of each priority
       for (Patient patient : patients) {
          if (Priority.RED.equals(patient.getPriority())) {
-            redin++;
+            redInboundPatientsCount++;
          }
          else if (Priority.YELLOW.equals(patient.getPriority())) {
-            yellowin ++;
+            yellowInboundPatientsCount ++;
          }
          else if (Priority.GREEN.equals(patient.getPriority())) {
-            greenin ++;
+            greenInboundPatientsCount ++;
          }
       }
+
+      // Count the number of doctors and nurses
       for (Staff cur : staff) {
          if (StaffRole.DOCTOR.equals(cur.getRole())) {
-            staffcur[0]++;
+            availableStaff[0]++;
          }
          else if (StaffRole.NURSE.equals(cur.getRole())) {
-            staffcur[1]++;
+            availableStaff[1]++;
          }
       }
-      if (redin > (bedcrits + redOver)) {
+
+      // Checks and counts the number of red priority patients over capacity
+      if (redInboundPatientsCount > (criticalBedsAvailable + redBedMergin)) {
          redCount++;
          redIncremented = true;
-      }
-      if (yellowin + greenin > (beds.size() - bedcrits + yellowOver + greenOver)) {
-         if ( (greenin > (beds.size() - bedcrits + greenOver)) && (yellowin <= (beds.size() - bedcrits + yellowOver)) ) {
+      } // Checks and counts the number of normal priority patients over capacity
+      if (yellowInboundPatientsCount + greenInboundPatientsCount > (beds.size() - criticalBedsAvailable + yellowBedMergin + greenBedMergin)) {
+         if ( (greenInboundPatientsCount > (beds.size() - criticalBedsAvailable + greenBedMergin)) && (yellowInboundPatientsCount <= (beds.size() - criticalBedsAvailable + yellowBedMergin)) ) {
             greenCount++;
             greenIncremented = true;
          } else {
@@ -93,22 +100,25 @@ public class DivergenceController {
             yellowIncremented = true;
          }
       }
-      need[0] = redin * red[0];
-      need[0] += yellowin * yellow[0];
-      need[0] += greenin * green[0];
-      need[1] = redin * red[1];
-      need[1] += yellowin * yellow[1];
-      need[1] += greenin * green[1];
-      if (need[0] > staffcur[0]) {
-         int diff = need[0] - staffcur[0];
-         if ((greenin * green[0]) >= diff)  {
+      // Calculate the need of doctors for each priority
+      neededStaff[0] = redInboundPatientsCount * redStaffRequired[0];
+      neededStaff[0] += yellowInboundPatientsCount * yellowStaffRequired[0];
+      neededStaff[0] += greenInboundPatientsCount * greenStaffRequired[0];
+      // Calculate the need of nurses for each priority
+      neededStaff[1] = redInboundPatientsCount * redStaffRequired[1];
+      neededStaff[1] += yellowInboundPatientsCount * yellowStaffRequired[1];
+      neededStaff[1] += greenInboundPatientsCount * greenStaffRequired[1];
+      // Calculate shortage of doctors
+      if (neededStaff[0] > availableStaff[0]) {
+         int diff = neededStaff[0] - availableStaff[0];
+         if ((greenInboundPatientsCount * greenStaffRequired[0]) >= diff)  {
             if (!greenIncremented) {
                greenIncremented = true;
                greenCount++;
             }
          }
          else {
-            int both = (yellowin * yellow[0]) + (greenin * green[0]);
+            int both = (yellowInboundPatientsCount * yellowStaffRequired[0]) + (greenInboundPatientsCount * greenStaffRequired[0]);
             if (both >= diff) {
                if (!greenIncremented) {
                   greenIncremented = true;
@@ -135,16 +145,17 @@ public class DivergenceController {
             }
          }
       }
-      if (need[1] > staffcur[1]) {
-         int diff = need[1] - staffcur[1];
-         if ((greenin * green[1]) >= diff)  {
+      // Calculate shortage for nurses
+      if (neededStaff[1] > availableStaff[1]) {
+         int diff = neededStaff[1] - availableStaff[1];
+         if ((greenInboundPatientsCount * greenStaffRequired[1]) >= diff)  {
             if (!greenIncremented) {
                greenIncremented = true;
                greenCount++;
             }
          }
          else {
-            int both = (yellowin * yellow[1]) + (greenin * green[1]);
+            int both = (yellowInboundPatientsCount * yellowStaffRequired[1]) + (greenInboundPatientsCount * greenStaffRequired[1]);
             if (both >= diff) {
                if (!greenIncremented) {
                   greenIncremented = true;
@@ -171,6 +182,8 @@ public class DivergenceController {
             }
          }
       }
+
+      // Make a call to divergence if shortage occurs
       EmergencyResponseService transportService = new EmergencyResponseService("http://localhost", 4567, 1000);
       if (redIncremented) {
          if ((redCount > allowedCount) && !redDivergence) {
