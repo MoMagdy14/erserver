@@ -47,19 +47,14 @@ public class DivergenceController {
       List<Patient> patients = controller.currentInboundPatients();
       List<Staff> staff = manager.getAvailableStaff();
       List<Bed> beds = manager.getAvailableBeds();
-      int criticalBedsAvailable = 0;
       int redInboundPatientsCount = 0;
       int yellowInboundPatientsCount = 0;
       int greenInboundPatientsCount = 0;
       int[] availableStaff = {0, 0};
-      int[] neededStaff = {0, 0};
+
 
       // Calculate number of critical care beds
-      for (Bed bed : beds) {
-         if (bed.isCriticalCare()) {
-            criticalBedsAvailable ++;
-         }
-      }
+      int criticalBedsAvailable = CalculateCriticalBeds(beds);
 
       // Count number of inbound patients of each priority
       for (Patient patient : patients) {
@@ -101,13 +96,8 @@ public class DivergenceController {
          }
       }
       // Calculate the need of doctors for each priority
-      neededStaff[0] = redInboundPatientsCount * redStaffRequired[0];
-      neededStaff[0] += yellowInboundPatientsCount * yellowStaffRequired[0];
-      neededStaff[0] += greenInboundPatientsCount * greenStaffRequired[0];
-      // Calculate the need of nurses for each priority
-      neededStaff[1] = redInboundPatientsCount * redStaffRequired[1];
-      neededStaff[1] += yellowInboundPatientsCount * yellowStaffRequired[1];
-      neededStaff[1] += greenInboundPatientsCount * greenStaffRequired[1];
+      int[] neededStaff = CalculateNeedStaff(redStaffRequired, yellowStaffRequired, greenStaffRequired,
+              redInboundPatientsCount, yellowInboundPatientsCount, greenInboundPatientsCount);
       // Calculate shortage of doctors
       if (neededStaff[0] > availableStaff[0]) {
          int diff = neededStaff[0] - availableStaff[0];
@@ -230,6 +220,29 @@ public class DivergenceController {
             greenDivergence = false;
          }
       }
+   }
+
+   private static int[] CalculateNeedStaff(int[] redStaffRequired, int[] yellowStaffRequired, int[] greenStaffRequired,
+                                           int redInboundPatientsCount, int yellowInboundPatientsCount, int greenInboundPatientsCount) {
+      int[] neededStaff = {0, 0};
+      neededStaff[0] = redInboundPatientsCount * redStaffRequired[0];
+      neededStaff[0] += yellowInboundPatientsCount * yellowStaffRequired[0];
+      neededStaff[0] += greenInboundPatientsCount * greenStaffRequired[0];
+      // Calculate the need of nurses for each priority
+      neededStaff[1] = redInboundPatientsCount * redStaffRequired[1];
+      neededStaff[1] += yellowInboundPatientsCount * yellowStaffRequired[1];
+      neededStaff[1] += greenInboundPatientsCount * greenStaffRequired[1];
+      return neededStaff;
+   }
+
+   private static int CalculateCriticalBeds(List<Bed> beds) {
+      int criticalBedsAvailable = 0;
+      for (Bed bed : beds) {
+         if (bed.isCriticalCare()) {
+            criticalBedsAvailable ++;
+         }
+      }
+      return criticalBedsAvailable;
    }
 
    private void sendDivergencePage(String text, boolean requireAck) {
