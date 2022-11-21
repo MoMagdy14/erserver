@@ -172,14 +172,18 @@ public class DivergenceController {
             }
          }
       }
-
+      // Generate Report about the current situation
+      DivergenceReportBuilder reportBuilder = new DivergenceReportBuilder(redInboundPatientsCount,
+              yellowInboundPatientsCount, greenInboundPatientsCount, availableStaff, neededStaff,
+              beds.size(), criticalBedsAvailable);
+      String divergenceReport = reportBuilder.buildReport();
       // Make a call to divergence if shortage occurs
       EmergencyResponseService transportService = new EmergencyResponseService("http://localhost", 4567, 1000);
       if (redIncremented) {
          if ((redCount > allowedCount) && !redDivergence) {
             redDivergence = true;
             transportService.requestInboundDiversion(Priority.RED);
-            sendDivergencePage("Entered divergence for RED priority patients!", true);
+            sendDivergencePage("Entered divergence for RED priority patients!" + divergenceReport, true);
             redCount = 0;
          }
       } else {
