@@ -29,6 +29,9 @@ public class NeededStaffCalculator {
         neededStaff[1] = redInboundPatientsCount * redStaffRequired[1];
         neededStaff[1] += yellowInboundPatientsCount * yellowStaffRequired[1];
         neededStaff[1] += greenInboundPatientsCount * greenStaffRequired[1];
+        if (neededStaff[1]  > 5) {
+            neededStaff[1] -= 1;
+        }
         return neededStaff;
     }
 }
